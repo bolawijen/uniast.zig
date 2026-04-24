@@ -1,47 +1,39 @@
 # UniAst
 
-Universal AST types and parser factory for Zig.
+Universal AST (Abstract Syntax Tree) engine for Zig. Designed for high performance, memory efficiency, and cross-language flexibility.
 
-## Modules
+## Available APIs
 
-### UniAst
+### `Tree` (AST Container)
+The `Tree` struct manages memory allocation and serves as the entry point for your AST.
 
-Generic AST node and document structure:
+- **`init(allocator: Allocator, root_type: NodeType) Tree`**
+  Initializes a new AST tree with a root node of the specified type.
+- **`deinit() void`**
+  Recursively frees all nodes and memory associated with the tree.
+- **`addChild(node_type: NodeType, props: anytype) !*Node`**
+  Allocates a new node and adds it as a direct child of the root node.
 
-```zig
-const uniast = @import("uniast");
+### `Node` (AST Element)
+Individual elements within the tree.
 
-var doc = uniast.Document.init(alloc);
-const node = try doc.createNode(.element);
-node.name = "div";
-doc.addChild(node);
-```
+- **`addChild(allocator: Allocator, node_type: NodeType, props: anytype) !*Node`**
+  Allocates a new node and adds it as a child of the current node.
+- **`.type`** (Field)
+  The identity of the node (enum value defined by `NodeType`).
+- **`.props`** (Field)
+  A struct containing node-specific metadata (defined by `Props`).
+- **`.children`** (Field)
+  An `ArrayListUnmanaged(*Node)` containing references to child nodes.
 
-### Parser
+## Key Features
 
-Generic parser factory — pass a plugin with a `step()` method:
+- **Lightweight Nodes**: Minimized memory footprint by separating metadata (`props`) from hierarchy (`children`).
+- **Standardized Schema**: Uses the `.type` pattern for node identity, aligning with industry standards like Estree.
+- **ArrayListUnmanaged**: Efficient child management without storing redundant allocator pointers in every node.
 
-```zig
-const uniast = @import("uniast");
+## Plugin System
 
-const MyPlugin = struct {
-    pub fn step(self: *MyPlugin, parser: *uniast.parser(MyPlugin), doc: *uniast.Document) anyerror!void {
-        // parse one token at parser.index
-    }
-};
+UniAst supports a plugin-based architecture for parsing. Plugins only need to define `NodeType` and `Props`, and implement a `step` function to populate the `Tree`.
 
-var plugin = MyPlugin{};
-var parser = uniast.parser(MyPlugin).init(source, &plugin);
-try parser.parse(&doc);
-```
-
-## Node Structure
-
-| Field | Type | Description |
-|---|---|---|
-| `kind` | `NodeKind` | `.text`, `.element`, `.expression`, `.block`, etc |
-| `type_name` | `[]const u8` | Language-specific type ("IfBlock", "SnippetBlock") |
-| `name` | `?[]const u8` | Tag name, snippet name, etc |
-| `value` | `?[]const u8` | Text content, expression text |
-| `children` | `[256]*Node` | Child nodes |
-| `attrs` | `[32]Attribute` | Attributes |
+For a real-world implementation, see [**uniast-svelte**](https://github.com/bolawijen/uniast-svelte.zig), a plugin that parses Svelte 5 templates into a `UniAst` tree.

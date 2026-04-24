@@ -1,6 +1,7 @@
 .{
-    .name = "uniast",
+    .name = .uniast,
     .version = "0.1.0",
+    .fingerprint = 0x906e72732e7b19b5,
     .paths = .{
         "build.zig",
         "build.zig.zon",

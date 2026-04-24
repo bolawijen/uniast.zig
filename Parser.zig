@@ -1,7 +1,9 @@
 const std = @import("std");
-const UniAst = @import("UniAst.zig");
+const UniAstFactory = @import("UniAst.zig");
 
 pub fn parser(comptime Plugin: type) type {
+    const Ast = UniAstFactory.UniAst(Plugin.NodeType, Plugin.Props);
+    
     return struct {
         source: []const u8,
         index: usize = 0,
@@ -11,7 +13,10 @@ pub fn parser(comptime Plugin: type) type {
             return .{ .source = source, .plugin = plugin };
         }
 
-        pub fn parse(self: *@This(), document: *UniAst.Document) anyerror!void {
+        pub fn parse(self: *@This(), document: *Ast.Tree) anyerror!void {
+            if (comptime @hasField(Plugin, "current_parent")) {
+                self.plugin.current_parent = &document.root;
+            }
             while (self.index < self.source.len) {
                 try self.plugin.step(self, document);
             }
@@ -56,11 +61,20 @@ pub fn parser(comptime Plugin: type) type {
             return self.source[start..self.index];
         }
 
+        pub fn readWord(self: *@This()) []const u8 {
+            const start = self.index;
+            while (self.index < self.source.len and
+                (std.ascii.isAlphabetic(self.source[self.index]) or
+                (self.index > start and std.ascii.isDigit(self.source[self.index]))))
+                self.index += 1;
+            return self.source[start..self.index];
+        }
+
         pub fn readIdentifier(self: *@This()) []const u8 {
             const start = self.index;
             while (self.index < self.source.len and
                 (std.ascii.isAlphabetic(self.source[self.index]) or
-                self.source[self.index] == '_' or self.source[self.index] == '$' or
+                self.source[self.index] == '_' or
                 (self.index > start and std.ascii.isDigit(self.source[self.index]))))
                 self.index += 1;
             return self.source[start..self.index];
@@ -69,26 +83,5 @@ pub fn parser(comptime Plugin: type) type {
         pub fn slice(self: *@This(), start: usize, end: usize) []const u8 {
             return self.source[start..end];
         }
-
-        pub fn isClose(self: *@This(), keyword: []const u8) bool {
-            if (self.index + 3 + keyword.len > self.source.len) return false;
-            return self.source[self.index] == '{' and
-                self.source[self.index + 1] == '/' and
-                self.source[self.index + 2 + keyword.len] == '}' and
-                std.mem.eql(u8, self.slice(self.index + 2, self.index + 2 + keyword.len), keyword);
-        }
-
-        pub fn isNext(self: *@This()) bool {
-            return self.match("{:else") or self.match("{:then") or self.match("{:catch");
-        }
     };
 }
-
-// Re-exports
-pub const NodeKind = UniAst.NodeKind;
-pub const Attribute = UniAst.Attribute;
-pub const Node = UniAst.Node;
-pub const Document = UniAst.Document;
-pub const MaxChildren = UniAst.MaxChildren;
-pub const MaxAttrs = UniAst.MaxAttrs;
-pub const ParseError = UniAst.ParseError;
