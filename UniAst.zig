@@ -45,6 +45,17 @@ pub fn UniAst(comptime NodeType: type, comptime Props: type) type {
                 }
                 node.children.deinit(self.alloc);
                 
+                inline for (std.meta.fields(Props)) |field| {
+                    const field_value = @field(node.props, field.name);
+                    const T_field = @TypeOf(field_value);
+                    
+                    if (@typeInfo(T_field) == .@"struct") {
+                        if (@hasField(T_field, "items") and (@hasField(T_field, "capacity") or @hasField(T_field, "cap"))) {
+                            @field(node.props, field.name).deinit(self.alloc);
+                        }
+                    }
+                }
+                
                 if (node != &self.root) {
                     self.alloc.destroy(node);
                 }
