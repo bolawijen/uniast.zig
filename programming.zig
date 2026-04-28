@@ -45,7 +45,6 @@ pub fn needString(parser: anytype) ![]const u8 {
     return content;
 }
 
-
 pub fn needIdentifier(parser: anytype) ![]const u8 {
     const start = parser.index;
     while (parser.index < parser.source.len and
