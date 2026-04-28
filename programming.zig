@@ -45,33 +45,6 @@ pub fn needString(parser: anytype) ![]const u8 {
     return content;
 }
 
-pub fn readFunctionCallArguments(parser: anytype, alloc: std.mem.Allocator, reader_ptr: anytype, readArg: anytype) !std.ArrayListUnmanaged([]const u8) {
-    var args: std.ArrayListUnmanaged([]const u8) = .empty;
-    errdefer args.deinit(alloc);
-
-    parser.allowWhitespace();
-    while (true) {
-        parser.allowWhitespace();
-        if (parser.index >= parser.source.len) break;
-        if (parser.source[parser.index] == ')') {
-            parser.index += 1;
-            break;
-        }
-        if (try readArg(reader_ptr)) |arg| {
-            try args.append(alloc, arg);
-        }
-        parser.allowWhitespace();
-        if (parser.index < parser.source.len and parser.source[parser.index] == ',') {
-            parser.index += 1;
-        } else if (parser.index < parser.source.len and parser.source[parser.index] == ')') {
-            parser.index += 1;
-            break;
-        } else {
-            break;
-        }
-    }
-    return args;
-}
 
 pub fn needIdentifier(parser: anytype) ![]const u8 {
     const start = parser.index;
