@@ -5,44 +5,44 @@ pub const ParseError = error{
     UnterminatedString,
 };
 
+/// Cek apakah karakter saat ini adalah pembuka string (' atau ") tanpa consume
+pub fn matchStringDelimiter(parser: anytype) bool {
+    if (parser.index >= parser.source.len) return false;
+    const ch = parser.source[parser.index];
+    return ch == '"' or ch == '\'';
+}
+
+/// Consume pembuka string dan return char-nya, atau error kalau bukan delimiter
+pub fn readStringDelimiter(parser: anytype) !u8 {
+    if (!matchStringDelimiter(parser)) return error.UnexpectedToken;
+    const ch = parser.source[parser.index];
+    parser.index += 1;
+    return ch;
+}
+
+/// Cek apakah karakter saat ini adalah escape backslash (\)
+pub fn isEscaped(parser: anytype) bool {
+    return parser.index < parser.source.len and parser.source[parser.index] == '\\';
+}
+
 pub fn needString(parser: anytype) ![]const u8 {
-    if (parser.index >= parser.source.len) return error.UnexpectedToken;
-
-    const quote_mark = parser.source[parser.index];
-    if (quote_mark != '"' and quote_mark != '\'') return error.UnexpectedToken;
-
-    parser.index += 1; // Skip opening quote
-    const content_start = parser.index;
+    const quote = try readStringDelimiter(parser);
+    const start = parser.index;
 
     while (parser.index < parser.source.len) {
-        const char = parser.source[parser.index];
-        
-        if (char == '\\') {
-            parser.index += 1;
-            if (parser.index < parser.source.len) {
-                parser.index += 1;
-            }
+        if (isEscaped(parser)) {
+            parser.index += 2; // skip \ dan char berikutnya (termasuk \")
             continue;
         }
-
-        if (char == quote_mark) {
-            break;
-        }
-        
+        if (parser.source[parser.index] == quote) break;
         parser.index += 1;
     }
 
     if (parser.index >= parser.source.len) return error.UnterminatedString;
 
-    const content = parser.source[content_start..parser.index];
-    parser.index += 1; // Skip closing quote
+    const content = parser.source[start..parser.index];
+    parser.index += 1; // skip closing quote
     return content;
-}
-
-pub fn matchStringDelimiter(parser: anytype) bool {
-    if (parser.index >= parser.source.len) return false;
-    const ch = parser.source[parser.index];
-    return ch == '"' or ch == '\'';
 }
 
 pub fn readFunctionCallArguments(parser: anytype, alloc: std.mem.Allocator, reader_ptr: anytype, readArg: anytype) !std.ArrayListUnmanaged([]const u8) {
