@@ -3,7 +3,7 @@ const UniAstFactory = @import("UniAst.zig");
 
 pub fn parser(comptime Plugin: type) type {
     const Ast = UniAstFactory.UniAst(Plugin.NodeType, Plugin.Props);
-    
+
     return struct {
         source: []const u8,
         index: usize = 0,
@@ -14,9 +14,8 @@ pub fn parser(comptime Plugin: type) type {
         }
 
         pub fn parse(self: *@This(), document: *Ast.Tree) anyerror!void {
-            if (comptime @hasField(Plugin, "current_parent")) {
-                self.plugin.current_parent = &document.root;
-            }
+            @as(*struct { parent: *Ast.Node }, @ptrCast(self.plugin)).parent = &document.root;
+
             while (self.index < self.source.len) {
                 try self.plugin.step(self, document);
             }
@@ -28,7 +27,10 @@ pub fn parser(comptime Plugin: type) type {
         }
 
         pub fn eat(self: *@This(), s: []const u8) bool {
-            if (self.match(s)) { self.index += s.len; return true; }
+            if (self.match(s)) {
+                self.index += s.len;
+                return true;
+            }
             return false;
         }
 
@@ -63,7 +65,8 @@ pub fn parser(comptime Plugin: type) type {
 
         pub fn readUntilChar(self: *@This(), char: u8) []const u8 {
             const start = self.index;
-            while (self.index < self.source.len and self.source[self.index] != char) self.index += 1;
+            while (self.index < self.source.len and self.source[self.index] != char)
+                self.index += 1;
             return self.source[start..self.index];
         }
 
@@ -71,8 +74,8 @@ pub fn parser(comptime Plugin: type) type {
             const start = self.index;
             while (self.index < self.source.len and
                 (std.ascii.isAlphabetic(self.source[self.index]) or
-                self.source[self.index] == '_' or
-                (self.index > start and std.ascii.isDigit(self.source[self.index]))))
+                    self.source[self.index] == '_' or
+                    (self.index > start and std.ascii.isDigit(self.source[self.index]))))
                 self.index += 1;
             return self.source[start..self.index];
         }
@@ -81,8 +84,8 @@ pub fn parser(comptime Plugin: type) type {
             const start = self.index;
             while (self.index < self.source.len and
                 (std.ascii.isAlphabetic(self.source[self.index]) or
-                self.source[self.index] == '_' or
-                (self.index > start and std.ascii.isDigit(self.source[self.index]))))
+                    self.source[self.index] == '_' or
+                    (self.index > start and std.ascii.isDigit(self.source[self.index]))))
                 self.index += 1;
             return self.source[start..self.index];
         }

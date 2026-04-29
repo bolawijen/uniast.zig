@@ -7,6 +7,8 @@
         "build.zig.zon",
         "UniAst.zig",
         "Parser.zig",
+        "blocks.zig",
+        "programming.zig",
         "root.zig",
     },
 }
