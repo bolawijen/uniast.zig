@@ -50,6 +50,11 @@ pub fn matchOpen(parser: anytype) bool {
     return parser.match("{");
 }
 
+pub fn matchClose(parser: anytype) bool {
+    parser.allowWhitespace();
+    return parser.match("}");
+}
+
 pub fn braceBlock(parser: anytype, ast: anytype, node: anytype) anyerror!void {
     try needOpenCurlyBracket(parser);
     
