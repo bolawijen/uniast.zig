@@ -45,18 +45,6 @@ pub fn parser(comptime Plugin: type) type {
             return self.source[self.index];
         }
 
-        pub fn allowWhitespace(self: *@This()) void {
-            while (self.peek()) |c| {
-                if (c == ' ' or c == '\t' or c == '\n' or c == '\r') self.index += 1 else break;
-            }
-        }
-
-        pub fn requireWhitespace(self: *@This()) void {
-            if (self.peek() == null or !std.ascii.isWhitespace(self.source[self.index]))
-                @panic("expected whitespace");
-            self.allowWhitespace();
-        }
-
         pub fn readUntil(self: *@This(), delimiter: []const u8) []const u8 {
             const start = self.index;
             while (self.index < self.source.len and !self.match(delimiter)) self.index += 1;
@@ -70,40 +58,8 @@ pub fn parser(comptime Plugin: type) type {
             return self.source[start..self.index];
         }
 
-        pub fn readWord(self: *@This()) []const u8 {
-            const start = self.index;
-            while (self.index < self.source.len and
-                (std.ascii.isAlphabetic(self.source[self.index]) or
-                    self.source[self.index] == '_' or
-                    (self.index > start and std.ascii.isDigit(self.source[self.index]))))
-                self.index += 1;
-            return self.source[start..self.index];
-        }
-
-        pub fn readIdentifier(self: *@This()) []const u8 {
-            const start = self.index;
-            while (self.index < self.source.len and
-                (std.ascii.isAlphabetic(self.source[self.index]) or
-                    self.source[self.index] == '_' or
-                    (self.index > start and std.ascii.isDigit(self.source[self.index]))))
-                self.index += 1;
-            return self.source[start..self.index];
-        }
-
         pub fn slice(self: *@This(), start: usize, end: usize) []const u8 {
             return self.source[start..end];
-        }
-
-        pub fn eatPunctuation(self: *@This(), chars: []const u8) ?[]const u8 {
-            if (self.index >= self.source.len) return null;
-            const c = self.source[self.index];
-            for (chars) |p| {
-                if (c == p) {
-                    self.index += 1;
-                    return self.source[self.index - 1 .. self.index];
-                }
-            }
-            return null;
         }
     };
 }

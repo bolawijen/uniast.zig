@@ -1,4 +1,5 @@
 const std = @import("std");
+const basic = @import("./basic.zig");
 
 pub const ParseError = error{
     UnexpectedToken,
@@ -22,12 +23,14 @@ pub fn readStringDelimiter(parser: anytype) !u8 {
 
 /// Cek apakah karakter saat ini adalah escape backslash (\)
 pub fn isEscaped(parser: anytype) bool {
-    return parser.index < parser.source.len and parser.source[parser.index] == '\\';
+    return parser.source[parser.index] == '\\';
 }
 
 pub fn needString(parser: anytype) ![]const u8 {
     const quote = try readStringDelimiter(parser);
-    const start = parser.index;
+    const s = parser.index;
+
+    // try expectError("main(\"halo\\\";", error.UnterminatedString);
 
     while (parser.index < parser.source.len) {
         if (isEscaped(parser)) {
@@ -40,30 +43,30 @@ pub fn needString(parser: anytype) ![]const u8 {
 
     if (parser.index >= parser.source.len) return error.UnterminatedString;
 
-    const content = parser.source[start..parser.index];
+    const content = parser.source[s..parser.index];
     parser.index += 1; // skip closing quote
     return content;
 }
 
 pub fn needIdentifier(parser: anytype) ![]const u8 {
-    const start_id = parser.index;
+    const s = parser.index;
     while (parser.index < parser.source.len and
         (std.ascii.isAlphabetic(parser.source[parser.index]) or
-        parser.source[parser.index] == '_' or
-        (parser.index > start_id and std.ascii.isDigit(parser.source[parser.index]))))
+            parser.source[parser.index] == '_' or
+            (parser.index > s and std.ascii.isDigit(parser.source[parser.index]))))
         parser.index += 1;
 
-    const id = parser.source[start_id..parser.index];
+    const id = parser.source[s..parser.index];
     if (id.len == 0) return error.UnexpectedToken;
     return id;
 }
 
 pub fn needComparisonOperator(parser: anytype) ![]const u8 {
-    const start = parser.index;
     if (parser.index + 1 < parser.source.len) {
         const two = parser.source[parser.index .. parser.index + 2];
         if (std.mem.eql(u8, two, "==") or std.mem.eql(u8, two, "!=") or
-            std.mem.eql(u8, two, "<=") or std.mem.eql(u8, two, ">=")) {
+            std.mem.eql(u8, two, "<=") or std.mem.eql(u8, two, ">="))
+        {
             parser.index += 2;
             return two;
         }
@@ -101,7 +104,7 @@ pub fn needLiteral(parser: anytype) ![]const u8 {
 }
 
 pub fn needOperator(parser: anytype, ops: []const []const u8) ![]const u8 {
-    parser.allowWhitespace();
+    basic.allowWhitespace(parser);
     for (ops) |op| {
         if (parser.eat(op)) return op;
     }
@@ -109,7 +112,7 @@ pub fn needOperator(parser: anytype, ops: []const []const u8) ![]const u8 {
 }
 
 pub fn needLogicalOperator(parser: anytype) ![]const u8 {
-    parser.allowWhitespace();
+    basic.allowWhitespace(parser);
     if (parser.eat("dan")) return "dan";
     if (parser.eat("atau") or parser.eat("ato")) return "atau";
     return error.UnexpectedToken;
@@ -118,13 +121,12 @@ pub fn needLogicalOperator(parser: anytype) ![]const u8 {
 pub fn needComparisonExpression(parser: anytype) !void {
     // 1. Baca operand kiri
     _ = try (needIdentifier(parser) catch needLiteral(parser));
-    parser.allowWhitespace();
+    basic.allowWhitespace(parser);
 
     // 2. Baca operator (perbandingan atau logika)
     _ = try (needComparisonOperator(parser) catch needLogicalOperator(parser));
-    parser.allowWhitespace();
+    basic.allowWhitespace(parser);
 
     // 3. Baca operand kanan
     _ = try (needIdentifier(parser) catch needLiteral(parser));
 }
-

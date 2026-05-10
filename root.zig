@@ -2,6 +2,7 @@ const std = @import("std");
 
 pub const Parser = @import("Parser.zig");
 pub const UniAst = @import("UniAst.zig").UniAst;
+pub const basic = @import("basic.zig");
 pub const programming = @import("programming.zig");
 pub const blocks = @import("blocks.zig");
 pub const ParseError = @import("UniAst.zig").ParseError;

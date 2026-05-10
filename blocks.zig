@@ -1,63 +1,64 @@
 const std = @import("std");
+const basic = @import("./basic.zig");
 
 pub fn needOpenParenBracket(parser: anytype) !void {
-    parser.allowWhitespace();
+    basic.allowWhitespace(parser);
     if (!parser.eat("(")) return error.ExpectedOpenParen;
 }
 
 pub fn needCloseParenBracket(parser: anytype) !void {
-    parser.allowWhitespace();
+    basic.allowWhitespace(parser);
     if (!parser.eat(")")) return error.ExpectedCloseParen;
 }
 
 pub fn needOpenCurlyBracket(parser: anytype) !void {
-    parser.allowWhitespace();
+    basic.allowWhitespace(parser);
     if (!parser.eat("{")) return error.ExpectedOpenCurly;
 }
 
 pub fn needCloseCurlyBracket(parser: anytype) !void {
-    parser.allowWhitespace();
+    basic.allowWhitespace(parser);
     if (!parser.eat("}")) return error.ExpectedCloseCurly;
 }
 
 pub fn needOpenSquareBracket(parser: anytype) !void {
-    parser.allowWhitespace();
+    basic.allowWhitespace(parser);
     if (!parser.eat("[")) return error.ExpectedOpenSquare;
 }
 
 pub fn needCloseSquareBracket(parser: anytype) !void {
-    parser.allowWhitespace();
+    basic.allowWhitespace(parser);
     if (!parser.eat("]")) return error.ExpectedCloseSquare;
 }
 
 pub fn eatOpenParenBracket(parser: anytype) bool {
-    parser.allowWhitespace();
+    basic.allowWhitespace(parser);
     return parser.eat("(");
 }
 
 pub fn eatCloseParenBracket(parser: anytype) bool {
-    parser.allowWhitespace();
+    basic.allowWhitespace(parser);
     return parser.eat(")");
 }
 
 pub fn eatCloseCurlyBracket(parser: anytype) bool {
-    parser.allowWhitespace();
+    basic.allowWhitespace(parser);
     return parser.eat("}");
 }
 
 pub fn matchOpen(parser: anytype) bool {
-    parser.allowWhitespace();
+    basic.allowWhitespace(parser);
     return parser.match("{");
 }
 
 pub fn matchClose(parser: anytype) bool {
-    parser.allowWhitespace();
+    basic.allowWhitespace(parser);
     return parser.match("}");
 }
 
 pub fn braceBlock(parser: anytype, ast: anytype, node: anytype) anyerror!void {
     try needOpenCurlyBracket(parser);
-    
+
     if (comptime !@hasField(@TypeOf(parser.plugin.*), "parent_node")) {
         @compileError("Plugin must have a 'parent_node' field to use braceBlock");
     }
@@ -72,6 +73,6 @@ pub fn braceBlock(parser: anytype, ast: anytype, node: anytype) anyerror!void {
             return err;
         };
     }
-    
+
     try needCloseCurlyBracket(parser);
 }

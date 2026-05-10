@@ -12,13 +12,13 @@ pub fn UniAst(comptime NodeType: type, comptime Props: type) type {
             pub fn addChild(self: *Node, allocator: std.mem.Allocator, node_type: NodeType, props: anytype) !*Node {
                 const child = try allocator.create(Node);
                 child.* = .{ .type = node_type };
-                
+
                 inline for (std.meta.fields(@TypeOf(props))) |field| {
                     if (@hasField(Props, field.name)) {
                         @field(child.props, field.name) = @field(props, field.name);
                     }
                 }
-                
+
                 try self.children.append(allocator, child);
                 return child;
             }
@@ -44,18 +44,18 @@ pub fn UniAst(comptime NodeType: type, comptime Props: type) type {
                     self.freeNode(child);
                 }
                 node.children.deinit(self.alloc);
-                
+
                 inline for (std.meta.fields(Props)) |field| {
                     const field_value = @field(node.props, field.name);
                     const T_field = @TypeOf(field_value);
-                    
+
                     if (@typeInfo(T_field) == .@"struct") {
                         if (@hasField(T_field, "items") and (@hasField(T_field, "capacity") or @hasField(T_field, "cap"))) {
                             @field(node.props, field.name).deinit(self.alloc);
                         }
                     }
                 }
-                
+
                 if (node != &self.root) {
                     self.alloc.destroy(node);
                 }
