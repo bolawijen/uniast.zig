@@ -34,7 +34,8 @@ pub fn needString(parser: anytype) ![]const u8 {
 
     while (parser.index < parser.source.len) {
         if (isEscaped(parser)) {
-            parser.index += 2; // skip \ dan char berikutnya (termasuk \")
+   if (parser.index + 1 >= parser.source.len) return error.UnterminatedString;
+parser.index += 2; // skip \ dan char berikutnya (termasuk \")
             continue;
         }
         if (parser.source[parser.index] == quote) break;
